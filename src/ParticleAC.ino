@@ -6,6 +6,8 @@
 
 #include <HyundaiHeatpumpIR.h>
 
+#include "IRSenderIRRemoteBridge.h"
+
 #define IR_PIN D6
 #define LED_PIN D7
 
@@ -27,7 +29,7 @@ ACThermostat thermostat;
 
 // ACState currentACState;
 
-IRSenderBitBang irSender(D6);
+IRSender *irSender = new IRSenderIRRemoteBridge();
 HyundaiHeatpumpIR *heatpumpIR;
 
 void setup() {
@@ -49,14 +51,14 @@ int powerOn(String data) {
     Serial.println("powerOn");
     /*transmitter.Transmit(ac_on, sizeof(ac_on) / sizeof(unsigned int));*/
     /*irsend.sendNEC(0x3EA0000A, 32);*/
-    heatpumpIR->send(irSender, POWER_ON, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
+    heatpumpIR->send(*irSender, POWER_ON, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
 
     return 0;
 }
 
 int powerOff(String data) {
     /*irsend.sendLG(0x88C0051, 28);*/
-    heatpumpIR->send(irSender, POWER_OFF, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
+    heatpumpIR->send(*irSender, POWER_OFF, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
 
     return 0;
 }
