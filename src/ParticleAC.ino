@@ -1,3 +1,5 @@
+#include <string.h>
+
 // This #include statement was automatically added by the Particle IDE.
 #include "ACThermostat.h"
 
@@ -7,34 +9,15 @@
 #include <HyundaiHeatpumpIR.h>
 
 #include "IRSenderIRRemoteBridge.h"
-
-#define IR_PIN D6
-#define LED_PIN D7
+#include "Homebridge.h"
 
 ACThermostat thermostat;
-
-// typedef enum {
-//     Off,
-//     Heat,
-//     Cool,
-//     Auto
-// } PowerMode;
-
-// typedef struct {
-//     PowerMode powerMode;
-//     float targetTemperature; // In Celcius
-//     float currentTemperature; // In Celcius
-//     float currentHumidity;
-// } ACState;
-
-// ACState currentACState;
 
 IRSender *irSender = new IRSenderIRRemoteBridge();
 HyundaiHeatpumpIR *heatpumpIR;
 
 void setup() {
-    Particle.function("powerOn", powerOn);
-    Particle.function("powerOff", powerOff);
+    Particle.function("updateState", updateState);
 
     heatpumpIR = new HyundaiHeatpumpIR();
 
@@ -47,19 +30,74 @@ void loop() {
     delay(thermostat.delayTimeInMilliseconds());
 }
 
-int powerOn(String data) {
-    Serial.println("powerOn");
-    /*transmitter.Transmit(ac_on, sizeof(ac_on) / sizeof(unsigned int));*/
-    /*irsend.sendNEC(0x3EA0000A, 32);*/
-    heatpumpIR->send(*irSender, POWER_ON, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
+int updateState(String data) {
+    // data format: this.active, this.mode, this.fanSpeed, this.targetTemperature, this.swingMode
+    Serial.println("updateState");
+    Serial.println(data);
+    
+    const char *dataString;
+    char *tokenizable, *token;
+    
+    dataString = data.c_str();
+    
+    tokenizable = strdup(dataString);
+    
+    int active, mode, fanSpeed, targetTemperature, swingMode;
+
+    // Parse parameters
+    
+    if ((token = strsep(&tokenizable, "|")) != NULL) {
+        active = atoi(token);
+    }
+    if ((token = strsep(&tokenizable, "|")) != NULL) {
+        mode = atoi(token);
+    }
+    if ((token = strsep(&tokenizable, "|")) != NULL) {
+        fanSpeed = atoi(token);
+    }
+    if ((token = strsep(&tokenizable, "|")) != NULL) {
+        targetTemperature = atoi(token);
+    }
+    if ((token = strsep(&tokenizable, "|")) != NULL) {
+        swingMode = atoi(token);
+    }
+    
+    free(tokenizable);
+    
+    // Translate from Homebridge constants to HeatpumpIR constants
+    
+    active = (active == HB_Characteristic_Active_ACTIVE) ? POWER_ON : POWER_OFF;
+    switch(mode) {
+        case HB_Characteristic_TargetHeaterCoolerState_AUTO:
+            mode = MODE_AUTO;
+            break;
+        case HB_Characteristic_TargetHeaterCoolerState_HEAT:
+            mode = MODE_HEAT;
+            break;
+        case HB_Characteristic_TargetHeaterCoolerState_COOL:
+            mode = MODE_COOL;
+            break;
+    }
+    switch(fanSpeed) {
+        case 0:
+            fanSpeed = FAN_AUTO;
+            break;
+        case 25:
+            fanSpeed = FAN_1;
+            break;
+        case 50:
+            fanSpeed = FAN_2;
+            break;
+        case 75:
+            fanSpeed = FAN_4;
+            break;
+        case 100:
+            fanSpeed = FAN_5;
+            break;
+    }
+    swingMode = (swingMode == HB_Characteristic_SwingMode_SWING_ENABLED) ? VDIR_SWING : VDIR_MANUAL;
+
+    heatpumpIR->send(*irSender, active, mode, fanSpeed, targetTemperature, swingMode, HDIR_AUTO);
 
     return 0;
 }
-
-int powerOff(String data) {
-    /*irsend.sendLG(0x88C0051, 28);*/
-    heatpumpIR->send(*irSender, POWER_OFF, MODE_COOL, FAN_1, 24, VDIR_AUTO, HDIR_AUTO);
-
-    return 0;
-}
-
