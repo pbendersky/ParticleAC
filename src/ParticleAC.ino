@@ -83,16 +83,16 @@ int updateState(String data) {
             fanSpeed = FAN_AUTO;
             break;
         case 25:
-            fanSpeed = FAN_1;
+            fanSpeed = FAN_AUTO;
             break;
         case 50:
-            fanSpeed = FAN_2;
+            fanSpeed = FAN_1;
             break;
         case 75:
-            fanSpeed = FAN_4;
+            fanSpeed = FAN_2;
             break;
         case 100:
-            fanSpeed = FAN_5;
+            fanSpeed = FAN_3;
             break;
     }
     swingMode = (swingMode == HB_Characteristic_SwingMode_SWING_ENABLED) ? VDIR_SWING : VDIR_MANUAL;
