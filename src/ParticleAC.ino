@@ -17,6 +17,13 @@ IRSender *irSender = new IRSenderIRRemoteBridge();
 HyundaiHeatpumpIR *heatpumpIR;
 
 void setup() {
+
+    // Disable LED when working normally.
+    // See: https://community.particle.io/t/disabling-status-led/3656/17
+    LEDSystemTheme theme;
+    theme.setColor(LED_SIGNAL_CLOUD_CONNECTED, 0);
+    theme.apply();
+    
     Particle.function("updateState", updateState);
 
     heatpumpIR = new HyundaiHeatpumpIR();
