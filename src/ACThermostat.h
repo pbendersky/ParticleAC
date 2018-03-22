@@ -5,11 +5,13 @@
 
 class ACThermostat {
     DHT dht;
+
+public:
     double currentTemperature;
     double currentHumidity;
 
-public:
     ACThermostat();
+
     void loop();
     long delayTimeInMilliseconds();
 private:

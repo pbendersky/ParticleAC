@@ -6,6 +6,8 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <Adafruit_DHT.h>
 
+#include <MQTT.h>
+
 #include <HyundaiHeatpumpIR.h>
 
 #include "IRSenderIRRemoteBridge.h"
@@ -15,6 +17,13 @@ ACThermostat thermostat;
 
 IRSender *irSender = new IRSenderIRRemoteBridge();
 HyundaiHeatpumpIR *heatpumpIR;
+
+byte server[] = { 192, 168, 1, 10 };
+MQTT mqttClient(server, 1883, mqtt_callback);
+
+void mqtt_callback(char* topic, byte* payload, unsigned int length) {
+    Serial.println("MQTT callback");
+}
 
 void setup() {
 
@@ -27,6 +36,8 @@ void setup() {
     Particle.function("updateState", updateState);
 
     heatpumpIR = new HyundaiHeatpumpIR();
+    
+    mqttClient.connect("particle");
 
     Serial.begin(9600);
 }
@@ -34,6 +45,13 @@ void setup() {
 void loop() {
     Serial.println("loop");
     thermostat.loop();
+    
+    if (mqttClient.isConnected()) {
+        mqttClient.loop();
+        mqttClient.publish("particle/currentTemp", String(thermostat.currentTemperature));
+        mqttClient.publish("particle/currentHumidity", String(thermostat.currentHumidity));
+    }
+    
     delay(thermostat.delayTimeInMilliseconds());
 }
 
